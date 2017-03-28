@@ -39,7 +39,7 @@ function BinaryTreeLSTM:new_leaf_module()
     h = nn.Tanh()(c)
   end
 
-  local leaf_module = nn.gModule({input}, {c, h})
+  local leaf_module = nn.gModule({input}, {c, h}):cuda()
   if self.leaf_module ~= nil then
     share_params(leaf_module, self.leaf_module)
   end
@@ -75,7 +75,7 @@ function BinaryTreeLSTM:new_composer()
   end
   local composer = nn.gModule(
     {lc, lh, rc, rh},
-    {c, h})
+    {c, h}):cuda()
 
   if self.composer ~= nil then
     share_params(composer, self.composer)
@@ -123,7 +123,7 @@ function BinaryTreeLSTM:forward(tree, inputs)
 end
 
 function BinaryTreeLSTM:backward(tree, inputs, grad)
-  local grad_inputs = torch.Tensor(inputs:size())
+  local grad_inputs = torch.Tensor(inputs:size()):cuda()
   self:_backward(tree, inputs, grad, grad_inputs)
   return grad_inputs
 end

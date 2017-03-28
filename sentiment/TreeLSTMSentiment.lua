@@ -18,7 +18,7 @@ function TreeLSTMSentiment:__init(config)
 
   -- word embedding
   self.emb_dim = config.emb_vecs:size(2)
-  self.emb = nn.LookupTable(config.emb_vecs:size(1), self.emb_dim)
+  self.emb = nn.LookupTable(config.emb_vecs:size(1), self.emb_dim):cuda()
   self.emb.weight:copy(config.emb_vecs)
 
   self.in_zeros = torch.zeros(self.emb_dim)
@@ -40,7 +40,7 @@ function TreeLSTMSentiment:__init(config)
   if self.structure == 'dependency' then
     self.treelstm = treelstm.ChildSumTreeLSTM(treelstm_config)
   elseif self.structure == 'constituency' then
-    self.treelstm = treelstm.BinaryTreeLSTM(treelstm_config)
+    self.treelstm = treelstm.BinaryTreeLSTM(treelstm_config):cuda()
   else
     error('invalid parse tree type: ' .. self.structure)
   end
@@ -56,13 +56,13 @@ function TreeLSTMSentiment:new_sentiment_module()
   sentiment_module
     :add(nn.Linear(self.mem_dim, self.num_classes))
     :add(nn.LogSoftMax())
-  return sentiment_module
+  return sentiment_module:cuda()
 end
 
 function TreeLSTMSentiment:train(dataset)
   self.treelstm:training()
   local indices = torch.randperm(dataset.size)
-  local zeros = torch.zeros(self.mem_dim)
+  local zeros = torch.zeros(self.mem_dim):cuda()
   for i = 1, dataset.size, self.batch_size do
     xlua.progress(i, dataset.size)
     local batch_size = math.min(i + self.batch_size - 1, dataset.size) - i + 1
